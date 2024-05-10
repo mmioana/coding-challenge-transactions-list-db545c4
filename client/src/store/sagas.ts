@@ -4,15 +4,18 @@ import {
   Transaction,
   TransactionResponse,
   TransactionReceipt,
+  TransactionRequest,
   BrowserProvider,
   Signer,
+  // parseEther,
 } from "ethers";
 
 import apolloClient from "../apollo/client";
-import { Actions } from "../types";
+import { Actions, Action, TransactionAction } from "../types";
 import { SaveTransaction } from "../queries";
+import { navigate } from "../components/NaiveRouter";
 
-function* sendTransaction() {
+function* sendTransaction(action: Action<TransactionAction>) {
   const provider = new JsonRpcProvider("http://localhost:8545");
 
   const walletProvider = new BrowserProvider(window.web3.currentProvider);
@@ -28,15 +31,22 @@ function* sendTransaction() {
     return accounts[random].address;
   };
 
-  const transaction = {
-    to: randomAddress(),
-    value: 1000000000000000000,
+  const recipientAddress = () => {
+    return accounts.find(account => account.address === action.payload?.recipient)?.address ?? randomAddress();
+  };
+
+  const transaction: TransactionRequest = {
+    to: recipientAddress(),
+    value: action.payload?.amount?.toString(),
   };
 
   try {
     const txResponse: TransactionResponse =
       yield signer.sendTransaction(transaction);
+    console.log('i am here')
     const response: TransactionReceipt = yield txResponse.wait();
+
+    console.log('i am here')
 
     const receipt: Transaction = yield response.getTransaction();
 
@@ -57,7 +67,10 @@ function* sendTransaction() {
       mutation: SaveTransaction,
       variables,
     });
+
+    yield navigate(`/transaction/${receipt.hash}`);
   } catch (error) {
+    console.log(error)
     //
   }
 }

@@ -1,16 +1,26 @@
 import React, { useCallback, useState } from "react";
 import Onboard, { WalletState } from "@web3-onboard/core";
+import injectedModule from '@web3-onboard/injected-wallets'
 
 import SendTransaction from "./SendTransaction";
 
+const injected = injectedModule();
+
 const onboard = Onboard({
-  wallets: [],
+  wallets: [injected],
+  appMetadata: {
+    name: 'Ioanas App',
+    icon: '<svg>App Icon</svg>',
+    description: 'This is an awesome app',
+    recommendedInjectedWallets: [{ name: 'MetaMask', url: 'https://metamask.io' },]
+  },
   chains: [
     {
-      id: "123456",
+      id: "0x539",
       token: "ETH",
-      label: "Local Ganache",
-      rpcUrl: "http://localhost:8545",
+      label: "Ganache",
+      publicRpcUrl: "http://localhost:8545",
+      rpcUrl: "http://localhost:8545"
     },
   ],
 });
@@ -19,13 +29,14 @@ const Navigation: React.FC = () => {
   const [wallet, setWallet] = useState<WalletState>();
 
   const handleConnect = useCallback(async () => {
+
     const wallets = await onboard.connectWallet();
 
     const [metamaskWallet] = wallets;
 
     if (
-      metamaskWallet.label === "MetaMask" &&
-      metamaskWallet.accounts[0].address
+      metamaskWallet?.label === "MetaMask" &&
+      metamaskWallet?.accounts[0].address
     ) {
       setWallet(metamaskWallet);
     }
@@ -42,11 +53,11 @@ const Navigation: React.FC = () => {
             Transactions List
           </a>
         </div>
-        <div className="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow sm:block">
+        <div className="hs-collapse overflow-hidden transition-all duration-300 basis-full grow block">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-end sm:mt-0 sm:pl-5">
             {wallet && (
               <>
-                <SendTransaction />
+                <SendTransaction sender={wallet.accounts[0].address} />
                 <p className="py-3 px-4 inline-flex justify-center items-center gap-2 rounded-md border-2 border-gray-200 font-semibold text-gray-200 text-sm">
                   {wallet.accounts[0].address}
                 </p>
